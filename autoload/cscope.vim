@@ -65,7 +65,7 @@ function! cscope#find(action, word)
   if len(dirtyDirs) > 0
     call s:updateDBs(dirtyDirs)
   endif
-  let dbl = s:AutoloadDB(s:FILE.unify_path(getcwd()))
+  let dbl = s:AutoloadDB(s:FILE.unify_path(cscope#GetBaseDir()))
   if dbl == 0
     try
       exe ':lcs f '.a:action.' '.a:word
@@ -163,6 +163,7 @@ endfunction
 function! s:AutoloadDB(dir)
   let ret = 0
   let m_dir = s:GetBestPath(a:dir)
+  echo "Debug: AutoloadDB().m_dir" m_dir
   if m_dir == ""
     echohl WarningMsg | echo "Can not find proper cscope db, please input a path to generate cscope db for." | echohl None
     let m_dir = input("", a:dir, 'dir')
@@ -227,15 +228,33 @@ endfunction
 
 function! s:GetBestPath(dir)
   let f = substitute(a:dir,'\\','/','g')
+  echo "Debug: GetBestPath().f" f
   let bestDir = ""
   for d in keys(s:dbs)
+    echo "Debug: GetBestPath().d" d
     if stridx(f, d) == 0 && len(d) > len(bestDir)
       let bestDir = d
     endif
   endfor
+  echo "Debug: GetBestPath().bestDir" bestDir
   return bestDir
 endfunction
 
+function! cscope#GetBaseDir()
+  let d = split(buffer_name('%'), '/',1)
+  let ret_dir = ''
+
+  if  d[0] == ''
+    let ret_dir = join(d[:-2], '/')
+  else
+    let ret_dir = getcwd() .'/' . join(d[:-2], '/')
+  endif
+  if isdirectory(ret_dir)
+    return ret_dir
+  else
+    return ''
+  endif
+endfunc
 
 function! s:CheckAbsolutePath(dir, defaultPath)
   let d = a:dir
